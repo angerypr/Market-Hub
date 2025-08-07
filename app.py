@@ -16,15 +16,22 @@ def home():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        usuario = request.form['usuario']
-        clave = request.form['clave']
-        user = Usuario.query.filter_by(username=usuario).first()
-        if user and user.password == clave:
-            session['usuario'] = usuario
-            return redirect('/dashboard')
+        usuario = request.form['usuario'].strip()
+        clave = request.form['clave'].strip()
+
+        if not usuario or not clave:
+            flash("Por favor, completa todos los campos.")
+            return redirect("/login")
+
+        if usuario == 'admin' and clave == 'markethub123':
+            session['usuario'] = usuario  
+            return redirect("/dashboard")
+
         else:
-            flash('Usuario o contraseña incorrecta.')
-    return render_template('login.html')
+            flash("Usuario o contraseña incorrectos.")
+            return redirect("/login")
+
+    return render_template("login.html")
 
 @app.route('/dashboard')
 def dashboard():
