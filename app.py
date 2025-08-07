@@ -40,36 +40,33 @@ def dashboard():
         return render_template('dashboard.html', productos=productos)
     return redirect('/login')
 
-@app.route('/productos')
-def productos():
-    if 'usuario' in session:
-        productos = Producto.query.all()
-        return render_template('agregar.html', productos=productos)
-    return redirect('/login')
-
 @app.route('/agregar', methods=['GET', 'POST'])
 def agregar():
     if 'usuario' not in session:
         return redirect('/login')
     
     if request.method == 'POST':
-        nombre = request.form['nombre']
+        nombre = request.form['nombre'].strip()
         precio = float(request.form['precio'])
         cantidad = int(request.form['cantidad'])
-        
+
+        if len(nombre) > 100:
+            flash('El nombre del producto no puede tener más de 100 caracteres.', 'danger')
+            return render_template('agregar.html')
+
         producto_existente = Producto.query.filter_by(nombre=nombre).first()
-        
         if producto_existente:
             flash('Ya existe un producto con ese nombre.', 'danger')
             return render_template('agregar.html')  
+
         nuevo = Producto(nombre=nombre, precio=precio, cantidad=cantidad)
         db.session.add(nuevo)
         db.session.commit()
         
         flash('¡Producto agregado correctamente!', 'success')
-        return redirect('/productos')
+        return redirect('/dashboard')  
     
-    return render_template('agregar.html')  
+    return render_template('agregar.html')
 
 @app.route('/editar/<int:id>', methods=['GET', 'POST'])
 def editar(id):
@@ -79,18 +76,17 @@ def editar(id):
             nuevo_nombre = request.form['nombre']
             precio = float(request.form['precio'])
             cantidad = int(request.form['cantidad'])
-
-            existente = Producto.query.filter(Producto.nombre == nuevo_nombre, Producto.id != id).first()
-            if existente:
-                flash('Ya existe otro producto con ese nombre.', 'danger')
-                return render_template('editar.html', producto=producto)
+            
+            if len(nuevo_nombre.strip()) > 100:
+               flash('El nombre del producto no puede tener más de 100 caracteres.', 'danger')
+               return render_template('editar.html', producto=producto)
 
             producto.nombre = nuevo_nombre
             producto.precio = precio
             producto.cantidad = cantidad
             db.session.commit()
             flash('Producto actualizado correctamente.', 'success')
-            return redirect('/productos')
+            return redirect('/dashboard')
 
         return render_template('editar.html', producto=producto)
     return redirect('/login')
